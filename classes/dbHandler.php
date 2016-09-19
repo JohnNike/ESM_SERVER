@@ -36,11 +36,13 @@ class dbHandler {
 	}
 
 
+	// unused
 	public function passEncrypt($password)  {
 		return trim(self::base64_url_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_128, ServerKey, $password, MCRYPT_MODE_CBC, md5("19590704", true))));
 	}
 
 
+	//unused
 	public function passDecrypt($password)  {
 		return trim(mcrypt_decrypt(MCRYPT_RIJNDAEL_128, ServerKey, trim(self::base64_url_decode($password)), MCRYPT_MODE_CBC, md5("19590704", true)));
 
