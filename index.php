@@ -3,6 +3,8 @@
 // APPLICATION CONFIGURATION
 //
 
+require_once ('configurations.php');
+
 define('WEBPATH','');
 // This is where your application code goes
 define('APPPATH', WEBPATH);
@@ -69,7 +71,7 @@ checkPrerequisites();
 
 
 require_once (CLASSPATH.'dbHandler.php');
-$mainDb = new dbHandler('mydb');
+$mainDb = new dbHandler(DB_NAME,DB_HOST,DB_USER,DB_PASSWORD);
 
 
 // Setup a global for the $_JnRequest so its easily accessible from anywhere

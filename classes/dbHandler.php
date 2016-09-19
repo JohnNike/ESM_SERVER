@@ -9,7 +9,7 @@ class dbHandler {
 
 	private $DBLINK = NULL;
 
-	public function __construct($DB_NAME, $DB_HOST = 'localhost', $DB_USER = '', $DB_PASSWORD = '') {
+	public function __construct($DB_NAME, $DB_HOST = '', $DB_USER = '', $DB_PASSWORD = '') {
 		$this->DB_NAME = $DB_NAME;
 		$this->DB_HOST = $DB_HOST;
 		$this->DB_USER = $DB_USER;
