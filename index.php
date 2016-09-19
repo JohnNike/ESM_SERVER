@@ -31,8 +31,6 @@ define('AUTOLOADLIBRARIES', '');
 // This is the array of configuration files we will load on every render
 define('AUTOLOADCONFIGS', 'exampleConfig');
 
-define('ServerSecret', 'john nikellis backend application');
-define('ServerKey', hash('sha256','321 john was here!!! 123',TRUE));
 
 // This is the default controller we will call if none is specified
 $_JnDefaultController = 'main';
