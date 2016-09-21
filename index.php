@@ -37,14 +37,12 @@ $_JnDefaultFunction = 'main';
 //
 // GLOBALS CONFIGURATION
 //
+
 ini_set('MAX_EXECUTION_TIME', 10);
 date_default_timezone_set('Europe/Athens');
 
-
 //////// Jn PHP ///////
 ///////////////////////
-
-global $SITE_CONFIG;
 
 // Setup a global for the index path.  We will use this to ensure the index file has been called.
 define('INDEX', pathinfo(__FILE__, PATHINFO_BASENAME) );
@@ -52,25 +50,28 @@ define('INDEX', pathinfo(__FILE__, PATHINFO_BASENAME) );
 // include configuration
 require_once ('configurations.php');
 
-
 // include our logger class
 require_once  (CLASSPATH.'errorLogger.php');
+$gLogger = new errorLogger();
 
-function checkPrerequisites() {
+
+function checkPrerequisites(errorLogger $gLogger) {
 
 	if(function_exists('mcrypt_encrypt')) {
 		;
 	} else {
-		(new errorLogger())->log("ERROR: MCRYPT isn't loaded");
+			$gLogger->log("ERROR: MCRYPT isn't loaded");
 	}
 }
 
-checkPrerequisites();
+checkPrerequisites($gLogger);
 
-
+// include database handling class
 
 require_once (CLASSPATH.'dbHandler.php');
-$mainDb = new dbHandler(DB_NAME,DB_HOST,DB_USER,DB_PASSWORD);
+
+
+////////////////////////////////// Request Parsing Start /////////////////////////////////
 
 // Setup a global for the $_JnRequest so its easily accessible from anywhere
 global $_JnRequest;
@@ -80,30 +81,30 @@ if(isset($_SERVER['REQUEST_URI'])){
     // Parse request URL into a controller, model and arguments so we can act on it.
     $_JnRequest = pathinfo($_SERVER['REQUEST_URI']);
 	$_JnRequest = $_JnRequest['dirname'].'/'.$_JnRequest['basename'];
-
-	if( strpos($_JnRequest,'?') !== FALSE ) {
-        $_JnRequest = explode('?',$_JnRequest);
-        $_JnRequest = $_JnRequest[1];
-	} else {
-		$_JnRequest = $_JnRequest[0];
-	}
-
 	$_JnRequest = explode('/',$_JnRequest);
     $_JnRequest = array_filter($_JnRequest);
     $_JnRequest = array_values($_JnRequest);
 } else {
+	$gLogger->log("ERROR: Request Uri not set");
 	include( APPPATH.'404.php' );
 }
 
 // Determine the controller to load and use
-if( isset( $_JnRequest[0] ) ) {
+if( isset($_JnRequest) && !empty($_JnRequest[0]) ) {
     $_JnRequest[0] = rtrim( $_JnRequest[0], "/ ");
-    if( !empty( $_JnRequest[0] ) ) {
-        $_JnController = $_JnRequest[0];
-    }
+    $_JnController = $_JnRequest[0];
+	if ($_JnController === "index.php") {
+		$_JnController = $_JnDefaultController;
+	}
+	$_JnController = substr($_JnController, 0, strpos($_JnController, "?"));
 } else {
     $_JnController = $_JnDefaultController;
 }
+
+if (empty($_JnController)) {
+	$_JnController = $_JnDefaultController;
+}
+
 
 // Determine the function to use in the requested controller
 if( isset( $_JnRequest[1] ) ) {
@@ -112,9 +113,11 @@ if( isset( $_JnRequest[1] ) ) {
     if( !empty( $_JnRequest[1] ) ) {
         $_JnFunction = $_JnRequest[1];
     }
+	unset($_JnRequest[1]);
 } else {
     $_JnFunction = $_JnDefaultFunction;
 }
+//////////////////////////////////  Request Parsing End  /////////////////////////////////
 
 // This is the core class of JnPHP
 class JnPHP {
@@ -132,29 +135,21 @@ class JnPHP {
 
     // This enables JnPHP to load classes each time it is subclassed
     function __construct(){
-	    global $mainDb;
-	    $this->db = $mainDb;
+
+	    // Load all autoload configs
+	    if(strlen(AUTOLOADCONFIGS) > 1){
+		    $autoloadConfigs = explode(',',AUTOLOADCONFIGS);
+		    foreach ( $autoloadConfigs as $config ) {
+			    $this->loadConfig($config);
+		    }
+	    }
+
+	    $this->db = new dbHandler(DB_NAME,DB_HOST,DB_USER,DB_PASSWORD);
         // Load all autoload models
         if(strlen(AUTOLOADMODELS) > 1){
             $autoloadModels = explode(',',AUTOLOADMODELS);
             foreach ( $autoloadModels as $model ) {
-                $this->loadModel($model,$mainDb);
-            }
-        }
-
-        // Load all autoload libraries
-        if(strlen(AUTOLOADLIBRARIES) > 1){
-            $autoloadLibraries = explode(',',AUTOLOADLIBRARIES);
-            foreach ( $autoloadLibraries as $library ) {
-                $this->loadLibrary($library);
-            }
-        }
-
-        // Load all autoload configs
-        if(strlen(AUTOLOADCONFIGS) > 1){
-            $autoloadConfigs = explode(',',AUTOLOADCONFIGS);
-            foreach ( $autoloadConfigs as $config ) {
-                $this->loadConfig($config);
+                $this->loadModel($model,$this->db);
             }
         }
 
@@ -177,27 +172,23 @@ class JnPHP {
             } else {
                 JnPHP::$_JnClasses[$className] = new $className($attributes);
             }
-            // Load all autoload models into subclass
+
+	        // Load all autoload configs into subclass
+	        if(strlen(AUTOLOADCONFIGS) > 1){
+		        $autoloadConfigs = explode(',',AUTOLOADCONFIGS);
+		        foreach ( $autoloadConfigs as $autoloadConfig ) {
+			        JnPHP::$_JnClasses[$className]->loadConfig($autoloadConfig);
+		        }
+	        }
+
+	        // Load all autoload models into subclass
             if(strlen(AUTOLOADMODELS) > 1){
                 $autoloadModels = explode(',',AUTOLOADMODELS);
                 foreach ( $autoloadModels as $autoloadModel ) {
                     JnPHP::$_JnClasses[$className]->$autoloadModel =& JnPHP::$_JnClasses[$autoloadModel];
                 }
             }
-            // Load all autoload libraries into subclass
-            if(strlen(AUTOLOADLIBRARIES) > 1){
-                $autoloadLibraries = explode(',',AUTOLOADLIBRARIES);
-                foreach ( $autoloadLibraries as $autoloadLibrary ) {
-                    JnPHP::$_JnClasses[$className]->$autoloadLibrary =& JnPHP::$_JnClasses[$autoloadLibrary];
-                }
-            }
-            // Load all autoload configs into subclass
-            if(strlen(AUTOLOADCONFIGS) > 1){
-                $autoloadConfigs = explode(',',AUTOLOADCONFIGS);
-                foreach ( $autoloadConfigs as $autoloadConfig ) {
-                    JnPHP::$_JnClasses[$className]->loadConfig($autoloadConfig);
-                }
-            }
+
         }
 
         // Check if we have a parent class and create a pointer to it if we do
@@ -208,9 +199,6 @@ class JnPHP {
         // Return the class we just created in our static classes array
         return self::$_JnClasses[$className];
     }
-
-
-
 
 	//  MODEL LOADER
     public function loadModel( $model,$arguments = array() ) {
@@ -224,7 +212,6 @@ class JnPHP {
         // Initialize model
         $this->$model =& $this->loadClass($model,$arguments);
     }
-
 
     // VIEW LOADER
     public function loadView( $view,$content = array() ) {
@@ -243,8 +230,6 @@ class JnPHP {
         include(VIEWPATH."$view.php");
 
     }
-
-
 
     // CONTROLLER LOADER
     public function loadController( $controller,$arguments = array() ) {
@@ -288,9 +273,6 @@ class JnPHP {
 
             return $args;
     }
-
-
-
 
     // LIBRARY LOADER
     public function loadLibrary( $library,$arguments = array(),$overrideClass = NULL) {
@@ -343,13 +325,14 @@ class JnPHP {
 
 }
 
+
 // Initialize JnPHP
 $JnPHP = new JnPHP();
 
 // Check if the requested controller exists
 if( file_exists( CONTROLLERPATH."$_JnController.php" ) !== TRUE){
-
-	include( APPPATH.'404.php' );
+	//include( APPPATH.'404.php' );
+	header("Location: /");
     exit;
 }
 
@@ -357,18 +340,16 @@ if( file_exists( CONTROLLERPATH."$_JnController.php" ) !== TRUE){
 $JnPHP->loadController($_JnController);
 
 // Check if the requested model exists
-$removeSecond = true;
 if( method_exists( $JnPHP->$_JnController, $_JnFunction ) !== TRUE){
-	$_JnFunction = $_JnDefaultFunction;
-    //include( APPPATH.'404.php' );
-    //exit;
-	$removeSecond = false;
+	header("Location: /");
+    exit;
 }
 
-unset($_JnRequest[0]);
-if ($removeSecond) unset($_JnRequest[1]);
-
 $_JnRequest = array_values($_JnRequest);  // repack the array
+foreach ($_JnRequest as $req) {
+	// sanitize request variables
+	$JnPHP->getDb()->cleanupParam($req) ;
+}
 
 // If a function was specified, call that one.  Otherwise, call the default one
 $JnPHP->$_JnController->$_JnFunction();

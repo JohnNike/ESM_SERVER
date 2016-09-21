@@ -18,17 +18,13 @@ class main extends JnPHP {
 			$this->user = $this->userModel->fetch($_SESSION['user']);
 		} else {
 			$this->user = null;
-			$this->user = $this->userModel->fetch($_JnRequest[0]);
+			if (isset($_JnRequest[0]))
+				$this->user = $this->userModel->fetch($_JnRequest[0]);
 		}
 
-
-		// Load an example model
-		//$this->loadModel('exampleModel');
-		// Fetch test content from our example model
-		$content['text'] = $this->exampleModel->defaultContent();
 		$content['config'] = $config;
 		if ($this->user != null) {
-			$content['text'] .= $this->user['userName'];
+			$content['text'] = $this->user['userName'];
 		}
 //		$content['text'] .=
 		// Load an example view

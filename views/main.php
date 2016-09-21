@@ -1,4 +1,4 @@
-<?php
+<?php if(!defined('INDEX')){exit;}
 
 $gCurrLang = 'el';
 
@@ -11,10 +11,6 @@ $VIEW_TITLE = $viewTranslations['VIEW_TITLE'][$gCurrLang];
 $VIEW_DESCRIPTION = $viewTranslations['VIEW_DESCRIPTION'][$gCurrLang];
 $VIEW_STYLES = '';
 
-include(TEMPLATEPATH.'header.php');
-include(TEMPLATEPATH.'content.php');
-echo "<code>";
-echo "Retrieved by view:" . $text . ".";
-echo "</code>";
+include(TEMPLATEPATH.'main_template.php');
+include(TEMPLATEPATH.'main_lqyout.php');
 
-include(TEMPLATEPATH.'footer.php');

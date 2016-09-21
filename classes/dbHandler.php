@@ -80,9 +80,8 @@ class dbHandler {
 
 
 
-	function cleanupParam($str, $encode_ent = false)
-	{
-		$haveQuotes = ( function_exists('get_magic_quotes_gpc') && @get_magic_quotes_gpc() == true);
+	function cleanupParam($str, $encode_ent = false) {
+		$haveQuotes = false;
 		$str = @trim($str);
 		if($encode_ent) {
 			$str = htmlspecialchars($str);

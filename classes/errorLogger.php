@@ -8,8 +8,8 @@ class errorLogger {
 	}
 
 	public function log($msg){
-		//echo "LOG: $msg\n";
-		file_put_contents(ERROR_LOG_DIR, $msg, FILE_APPEND);
+		echo "LOG: $msg\n";
+	//	file_put_contents(ERROR_LOG_DIR, $msg, FILE_APPEND);
 	}
 
 

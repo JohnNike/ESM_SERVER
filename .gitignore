@@ -2,3 +2,4 @@ configurations.php
 .idea/
 configs/
 configs/*
+.htaccess

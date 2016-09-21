@@ -14,7 +14,7 @@ class userModel extends JnPHP {
 	}
 
 	public function fetchObj($userId) {
-		$query = "SELECT * FROM user WHERE userId=$userId";
+		$query = "SELECT * FROM user WHERE userId='$userId'";
 		$nUser = $this->getDb()->fetch($query);
 		if ($nUser) {
 			$this->userId = $nUser['userId'];
@@ -26,7 +26,7 @@ class userModel extends JnPHP {
 	}
 
 	public function fetch($userId) {
-		$query = "SELECT * FROM user WHERE userId=$userId";
+		$query = "SELECT * FROM user WHERE userId='$userId'";
 		$nUser = $this->db->fetch($query);
 		if ($nUser) {
 			$this->userId = $nUser['userId'];
