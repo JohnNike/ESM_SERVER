@@ -14,7 +14,7 @@ $VIEW_STYLES = '';
 include(TEMPLATEPATH.'header.php');
 include(TEMPLATEPATH.'content.php');
 echo "<code>";
-echo "Retrieved by view:" . $text . ". Vangeli eisai malakas";
+echo "Retrieved by view:" . $text . ".";
 echo "</code>";
 
 include(TEMPLATEPATH.'footer.php');

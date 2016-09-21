@@ -1,2 +1,4 @@
 configurations.php
 .idea/
+configs/
+configs/*

@@ -1,7 +1,7 @@
 <?php if(!defined('INDEX')){exit;}
 
 class dbHandler {
-	protected static $SUPPRESS_ERRORS = TRUE;
+	protected static $SUPPRESS_ERRORS = FALSE;
 	protected $DB_HOST = null;
 	protected $DB_NAME = null;
 	protected $DB_USER = null;
@@ -21,6 +21,7 @@ class dbHandler {
 			if (mysqli_query($this->DBLINK, "SET NAMES utf8")) ;
 			if ($this->DBLINK->errno) $this->dieErr($this->DBLINK->error);
 		} catch (Exception $e) {
+			(new errorLogger())->log($e);
 			$this->dieErr($e);
 		}
 	}

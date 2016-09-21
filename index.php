@@ -3,7 +3,7 @@
 // APPLICATION CONFIGURATION
 //
 
-require_once ('configurations.php');
+session_start();
 
 define('WEBPATH','');
 // This is where your application code goes
@@ -14,8 +14,6 @@ define('MODELPATH', WEBPATH.'models/');
 define('VIEWPATH', WEBPATH.'views/');
 // This is where your controller php files go
 define('CONTROLLERPATH', WEBPATH.'controllers/');
-// This is where your library php files go
-define('LIBRARYPATH', WEBPATH.'libraries/');
 // This is where your config php files go
 define('CONFIGPATH', WEBPATH.'configs/');
 // This is where your template files go
@@ -25,11 +23,10 @@ define('CLASSPATH', WEBPATH.'classes/');
 
 // NOTE: In PHP7, these autoload lists can be moved to arrays
 // This is the array of models we will load on every render
-define('AUTOLOADMODELS', 'exampleModel');
+define('AUTOLOADMODELS', 'userModel');
 // This is the array of libraries we will load on every render
-define('AUTOLOADLIBRARIES', '');
 // This is the array of configuration files we will load on every render
-define('AUTOLOADCONFIGS', 'exampleConfig');
+define('AUTOLOADCONFIGS', 'globalConfig');
 
 
 // This is the default controller we will call if none is specified
@@ -48,10 +45,13 @@ date_default_timezone_set('Europe/Athens');
 ///////////////////////
 
 global $SITE_CONFIG;
-$SITE_CONFIG['author'] = "John Nikellis";
 
 // Setup a global for the index path.  We will use this to ensure the index file has been called.
 define('INDEX', pathinfo(__FILE__, PATHINFO_BASENAME) );
+
+// include configuration
+require_once ('configurations.php');
+
 
 // include our logger class
 require_once  (CLASSPATH.'errorLogger.php');
@@ -59,18 +59,18 @@ require_once  (CLASSPATH.'errorLogger.php');
 function checkPrerequisites() {
 
 	if(function_exists('mcrypt_encrypt')) {
-		(new errorLogger("/var/tmp/my-errors.log"))->log("OK: MCRYPT is Loaded");
+		;
 	} else {
-		(new errorLogger("/var/tmp/my-errors.log"))->log("ERROR: MCRYPT isn't loaded");
+		(new errorLogger())->log("ERROR: MCRYPT isn't loaded");
 	}
 }
 
 checkPrerequisites();
 
 
+
 require_once (CLASSPATH.'dbHandler.php');
 $mainDb = new dbHandler(DB_NAME,DB_HOST,DB_USER,DB_PASSWORD);
-
 
 // Setup a global for the $_JnRequest so its easily accessible from anywhere
 global $_JnRequest;
@@ -118,7 +118,7 @@ if( isset( $_JnRequest[1] ) ) {
 
 // This is the core class of JnPHP
 class JnPHP {
-
+	protected $db = null;
 
     // This is where application configuration is kept loaded
     public static $_JnConfig = array();
@@ -126,15 +126,19 @@ class JnPHP {
     // This is where the classes that have been loaded are stored
     public static $_JnClasses = array();
 
+	function getDb() {
+		return $this->db;
+	}
 
     // This enables JnPHP to load classes each time it is subclassed
     function __construct(){
-
+	    global $mainDb;
+	    $this->db = $mainDb;
         // Load all autoload models
         if(strlen(AUTOLOADMODELS) > 1){
             $autoloadModels = explode(',',AUTOLOADMODELS);
             foreach ( $autoloadModels as $model ) {
-                $this->loadModel($model);
+                $this->loadModel($model,$mainDb);
             }
         }
 
@@ -344,7 +348,8 @@ $JnPHP = new JnPHP();
 
 // Check if the requested controller exists
 if( file_exists( CONTROLLERPATH."$_JnController.php" ) !== TRUE){
-    include( APPPATH.'404.php' );
+
+	include( APPPATH.'404.php' );
     exit;
 }
 
@@ -352,10 +357,18 @@ if( file_exists( CONTROLLERPATH."$_JnController.php" ) !== TRUE){
 $JnPHP->loadController($_JnController);
 
 // Check if the requested model exists
+$removeSecond = true;
 if( method_exists( $JnPHP->$_JnController, $_JnFunction ) !== TRUE){
-    include( APPPATH.'404.php' );
-    exit;
+	$_JnFunction = $_JnDefaultFunction;
+    //include( APPPATH.'404.php' );
+    //exit;
+	$removeSecond = false;
 }
+
+unset($_JnRequest[0]);
+if ($removeSecond) unset($_JnRequest[1]);
+
+$_JnRequest = array_values($_JnRequest);  // repack the array
 
 // If a function was specified, call that one.  Otherwise, call the default one
 $JnPHP->$_JnController->$_JnFunction();
